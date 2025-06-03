@@ -12,37 +12,13 @@ namespace SilksongHealing
 
         public override void Initialize()
         {
-            On.HeroController.Update += CheckFastHealPressed;
+            On.HeroController.Awake += OnHeroAwake;
         }
 
-        public void CheckFastHealPressed(On.HeroController.orig_Update orig, HeroController self)
+        private void OnHeroAwake(On.HeroController.orig_Awake orig, HeroController self)
         {
             orig(self);
-            if (Input.GetKeyDown(KeyCode.V))
-            {
-                HealThreeMasks();
-            }
-        }
-
-        private IEnumerator HealThreeMasks()
-        {
-            HeroController hc = HeroController.instance;
-
-            if (PlayerData.instance.GetInt("MPCharge") >= 99)
-            {
-                hc.AddHealth(3);
-                hc.TakeMP(99);
-                hc.GetComponent<SpriteFlash>().flashFocusHeal();
-
-                PlayMakerFSM spellControl = hc.spellControl;
-                GameObject flashPrefab = spellControl.GetAction<SpawnObjectFromGlobalPool>("Focus Heal", 6).gameObject.Value;
-                GameObject flash = GameObject.Instantiate(flashPrefab, hc.transform.position, Quaternion.identity);
-                flash.SetActive(true);
-
-                yield return new WaitUntil(() => !flash.active);
-
-                GameObject.Destroy(flash);
-            }
+            self.gameObject.AddComponent<FastHealingSystem>();
         }
     }
 }
