@@ -18,15 +18,23 @@ namespace SilksongHealing
 
         private int OnSoulGained(int n)
         {
-            return n / 2;
+            if (isCharmEquipped())
+                return Mathf.RoundToInt((float)n * 0.6f);
+            else
+                return n;
         }
 
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.V))
+            if (Input.GetKeyDown(KeyCode.V) && isCharmEquipped())
             {
                 StartCoroutine(HealThreeMasks());
             }
+        }
+
+        private bool isCharmEquipped()
+        {
+            return PlayerData.instance.GetBool($"equippedCharm_{SilksongHealing.instantHealCharm.Id}");
         }
 
         private IEnumerator HealThreeMasks()
