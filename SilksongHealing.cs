@@ -15,7 +15,9 @@ namespace SilksongHealing
 
         public override void Initialize()
         {
-            instantHealCharm.GiveCharm();
+            // if (!instantHealCharm.GotCharm)
+            //     instantHealCharm.GiveCharm(true);
+
             On.HeroController.Awake += OnHeroAwake;
         }
 
