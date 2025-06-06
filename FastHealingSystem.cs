@@ -20,8 +20,6 @@ namespace SilksongHealing
             healAudioSource = hc.GetComponent<AudioSource>();
             healAudioSource.clip = (AudioClip)spellControl.GetAction<AudioPlayerOneShotSingle>("Focus Heal", 3).audioClip.Value;
 
-            MyLogger.Log($"{SilksongHealing.instantHealCharm.IsEquipped}");
-
             ModHooks.SoulGainHook += OnSoulGained;
             On.HeroController.CanFocus += CheckIfCharmNotEquippedToAllowFocus;
         }
@@ -53,8 +51,6 @@ namespace SilksongHealing
 
         private bool isCharmEquipped()
         {
-            MyLogger.Log($"{SilksongHealing.instantHealCharm.IsEquipped}");
-            MyLogger.Log($"equipped_charm{SilksongHealing.instantHealCharm.Id}");
             return SilksongHealing.instantHealCharm.IsEquipped;
         }
 
