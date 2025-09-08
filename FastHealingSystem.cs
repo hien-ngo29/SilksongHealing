@@ -47,6 +47,10 @@ namespace SilksongHealing
             {
                 StartCoroutine(HealThreeMasks());
             }
+            else if (global::InputHandler.Instance.inputActions.cast.WasPressed && isCharmEquipped() && !global::GameManager.instance.IsMenuScene())
+            {
+                StartCoroutine(HealThreeMasks());
+            }
         }
 
         private bool isCharmEquipped()
