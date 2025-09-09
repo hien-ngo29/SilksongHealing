@@ -43,11 +43,7 @@ namespace SilksongHealing
 
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.V) && isCharmEquipped() && !global::GameManager.instance.IsMenuScene())
-            {
-                StartCoroutine(HealThreeMasks());
-            }
-            else if (global::InputHandler.Instance.inputActions.cast.WasPressed && isCharmEquipped() && !global::GameManager.instance.IsMenuScene())
+            if ((Input.GetKeyDown(KeyCode.V) || InputHandler.Instance.inputActions.cast.WasPressed) && isCharmEquipped() && !GameManager.instance.IsMenuScene())
             {
                 StartCoroutine(HealThreeMasks());
             }
@@ -60,38 +56,27 @@ namespace SilksongHealing
 
         private IEnumerator HealThreeMasks()
         {
-            if (PlayerData.instance.MPCharge >= 99)
-            {
-                healAudioSource.Play();
+            int numberOfHealMasks;
 
-                hc.AddHealth(3);
-                hc.TakeMP(99);
-                hc.GetComponent<SpriteFlash>().flashFocusHeal();
+            if (PlayerData.instance.soulLimited && PlayerData.instance.MPCharge >= 66)
+                numberOfHealMasks = 2;
+            else if (PlayerData.instance.MPCharge >= 99)
+                numberOfHealMasks = 3;
+            else
+                yield break;
 
-                GameObject flashPrefab = spellControl.GetAction<SpawnObjectFromGlobalPool>("Focus Heal", 6).gameObject.Value;
-                GameObject flash = GameObject.Instantiate(flashPrefab, hc.transform.position, Quaternion.identity);
-                flash.SetActive(true);
+            healAudioSource.Play();
 
-                yield return new WaitUntil(() => !flash.activeSelf);
+            hc.AddHealth(numberOfHealMasks);
+            hc.TakeMP(numberOfHealMasks * 11);
 
-                GameObject.Destroy(flash);
-            }
-            else if (PlayerData.instance.soulLimited && PlayerData.instance.MPCharge >= 66)
-            {
-                healAudioSource.Play();
+            GameObject flashPrefab = spellControl.GetAction<SpawnObjectFromGlobalPool>("Focus Heal", 6).gameObject.Value;
+            GameObject flash = Instantiate(flashPrefab, hc.transform.position, Quaternion.identity);
+            flash.SetActive(true);
 
-                hc.AddHealth(2);
-                hc.TakeMP(66);
-                hc.GetComponent<SpriteFlash>().flashFocusHeal();
+            yield return new WaitUntil(() => !flash.activeSelf);
 
-                GameObject flashPrefab = spellControl.GetAction<SpawnObjectFromGlobalPool>("Focus Heal", 6).gameObject.Value;
-                GameObject flash = GameObject.Instantiate(flashPrefab, hc.transform.position, Quaternion.identity);
-                flash.SetActive(true);
-
-                yield return new WaitUntil(() => !flash.activeSelf);
-
-                GameObject.Destroy(flash);
-            }
+            Destroy(flash);
         }
     }
 }
