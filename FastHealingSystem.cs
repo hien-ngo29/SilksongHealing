@@ -43,7 +43,11 @@ namespace SilksongHealing
 
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.V) && isCharmEquipped())
+            if (Input.GetKeyDown(KeyCode.V) && isCharmEquipped() && !global::GameManager.instance.IsMenuScene())
+            {
+                StartCoroutine(HealThreeMasks());
+            }
+            else if (global::InputHandler.Instance.inputActions.cast.WasPressed && isCharmEquipped() && !global::GameManager.instance.IsMenuScene())
             {
                 StartCoroutine(HealThreeMasks());
             }
@@ -62,6 +66,22 @@ namespace SilksongHealing
 
                 hc.AddHealth(3);
                 hc.TakeMP(99);
+                hc.GetComponent<SpriteFlash>().flashFocusHeal();
+
+                GameObject flashPrefab = spellControl.GetAction<SpawnObjectFromGlobalPool>("Focus Heal", 6).gameObject.Value;
+                GameObject flash = GameObject.Instantiate(flashPrefab, hc.transform.position, Quaternion.identity);
+                flash.SetActive(true);
+
+                yield return new WaitUntil(() => !flash.activeSelf);
+
+                GameObject.Destroy(flash);
+            }
+            else if (PlayerData.instance.soulLimited && PlayerData.instance.MPCharge >= 66)
+            {
+                healAudioSource.Play();
+
+                hc.AddHealth(2);
+                hc.TakeMP(66);
                 hc.GetComponent<SpriteFlash>().flashFocusHeal();
 
                 GameObject flashPrefab = spellControl.GetAction<SpawnObjectFromGlobalPool>("Focus Heal", 6).gameObject.Value;
