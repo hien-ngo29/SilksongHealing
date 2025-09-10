@@ -3,6 +3,7 @@ using UnityEngine;
 using Modding;
 using SFCore.Utils;
 using HutongGames.PlayMaker.Actions;
+using IL.InControl;
 
 namespace SilksongHealing
 {
@@ -43,10 +44,16 @@ namespace SilksongHealing
 
         private void Update()
         {
-            if ((Input.GetKeyDown(KeyCode.V) || InputHandler.Instance.inputActions.cast.WasPressed) && isCharmEquipped() && !GameManager.instance.IsMenuScene())
+            if (isQuickHealEventActivated() && isCharmEquipped() && !GameManager.instance.IsMenuScene())
             {
                 StartCoroutine(HealThreeMasks());
             }
+        }
+
+        private bool isQuickHealEventActivated()
+        {
+            return SilksongHealing.globalSettings.keybinds.quickHealKey.IsPressed 
+            || SilksongHealing.globalSettings.buttonbinds.quickHealButton.IsPressed;
         }
 
         private bool isCharmEquipped()
@@ -68,7 +75,7 @@ namespace SilksongHealing
             healAudioSource.Play();
 
             hc.AddHealth(numberOfHealMasks);
-            hc.TakeMP(numberOfHealMasks * 11);
+            hc.TakeMP(numberOfHealMasks * 33);
 
             GameObject flashPrefab = spellControl.GetAction<SpawnObjectFromGlobalPool>("Focus Heal", 6).gameObject.Value;
             GameObject flash = Instantiate(flashPrefab, hc.transform.position, Quaternion.identity);

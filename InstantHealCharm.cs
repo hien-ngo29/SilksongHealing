@@ -7,7 +7,7 @@ namespace SilksongHealing
     public class InstantHealCharm : EasyCharm
     {
         protected override int GetCharmCost() => 4;
-        protected override string GetDescription() => "Allows the bearer to instantly restore 3 Masks when SOUL is full, without the need to focus. Disables the ability to focus and reduces SOUL gained from striking foes by 60%.\r\n\r\nPress [V] to release healing.";
+        protected override string GetDescription() => "Allows the bearer to instantly restore 3 Masks when SOUL is full, without the need to focus. Disables the ability to focus and reduces SOUL gained from striking foes by 60%.";
         protected override string GetName() => "Soulburst";
         protected override Sprite GetSpriteInternal()
         {
