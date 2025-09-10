@@ -44,7 +44,7 @@ namespace SilksongHealing
 
         private void Update()
         {
-            if (isQuickHealEventActivated() && isCharmEquipped() && !GameManager.instance.IsMenuScene())
+            if (isQuickHealEventActivated() && isCharmEquipped() && !hc.controlReqlinquished)
             {
                 StartCoroutine(HealThreeMasks());
             }
