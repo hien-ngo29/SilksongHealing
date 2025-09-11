@@ -44,7 +44,7 @@ namespace SilksongHealing
 
         private void Update()
         {
-            if (isQuickHealEventActivated() && isCharmEquipped() && !hc.controlReqlinquished)
+            if (isQuickHealEventActivated() && isCharmEquipped() && !hc.controlReqlinquished && PlayerData.instance.CurrentMaxHealth != PlayerData.instance.health)
             {
                 StartCoroutine(HealThreeMasks());
             }
