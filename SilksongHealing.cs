@@ -55,6 +55,10 @@ namespace SilksongHealing
             {
                 instantHealCharm.RestoreCharmState(settings.instantHealCharmState);
             }
+            if (!instantHealCharm.GotCharm)
+            {
+                instantHealCharm.GiveCharm();
+            }
         }
 
         public LocalSettings OnSaveLocal()
