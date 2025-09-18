@@ -44,10 +44,15 @@ namespace SilksongHealing
 
         private void Update()
         {
-            if (isQuickHealEventActivated() && isCharmEquipped() && !hc.controlReqlinquished)
+            if (isQuickHealEventActivated() && isCharmEquipped() && !hc.controlReqlinquished && !isFullHealth())
             {
                 StartCoroutine(HealThreeMasks());
             }
+        }
+
+        private bool isFullHealth()
+        {
+            return PlayerData.instance.GetInt("health") == PlayerData.instance.GetInt("maxHealth");
         }
 
         private bool isQuickHealEventActivated()
