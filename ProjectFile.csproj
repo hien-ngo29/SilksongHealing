@@ -15,8 +15,8 @@
     <Product>SilksongHealing</Product>
     <Description>A Hollow Knight Mod</Description>
     <Copyright>Copyright ©  $year$</Copyright>
-    <AssemblyVersion>1.1.0.1</AssemblyVersion>
-    <FileVersion>1.1.0.1</FileVersion>
+    <AssemblyVersion>1.1.0.2</AssemblyVersion>
+    <FileVersion>1.1.0.2</FileVersion>
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
