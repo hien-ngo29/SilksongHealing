@@ -10,6 +10,7 @@ namespace SilksongHealing
     public class FastHealingSystem : MonoBehaviour
     {
         private HeroController hc = HeroController.instance;
+        private GameManager gm = GameManager.instance;
         private AudioSource hcAudioSource;
         PlayMakerFSM spellControl;
 
@@ -92,9 +93,14 @@ namespace SilksongHealing
             orig(self, amount);
         }
 
+        private bool IsHeroInStableState()
+        {
+            return !hc.cState.dead && !hc.cState.hazardDeath && !hc.inAcid && !gm.isPaused && !hc.cState.transitioning && !hc.cState.hazardRespawning && !hc.playerData.isInvincible;
+        }
+
         private void Update()
         {
-            if (IsQuickHealEventActivated() && IsCharmEquipped() && !hc.controlReqlinquished && !isHealing && MasksWillBeHealedCurrenly() != -1)
+            if (IsQuickHealEventActivated() && IsCharmEquipped() && !hc.controlReqlinquished && IsHeroInStableState() && !isHealing && MasksWillBeHealedCurrenly() != -1)
             {
                 StartCoroutine(StartHealing());
             }
@@ -136,12 +142,12 @@ namespace SilksongHealing
 
             takenDamageWhileHealing = false;
 
-            if (numberOfTimesHealedWithDeepFocus < 2 && hc.playerData.equippedCharm_34)
+            if (numberOfTimesHealedWithDeepFocus < 2 && hc.playerData.equippedCharm_34 && !takenDamageWhileHealing && IsHeroInStableState())
             {
                 StartCoroutine(StartHealing());
                 yield break;
             }
-            else if (numberOfTimesHealedWithDeepFocus >= 2)
+            else if (numberOfTimesHealedWithDeepFocus >= 2  && !takenDamageWhileHealing)
             {
                 numberOfTimesHealedWithDeepFocus = 0;
             }
