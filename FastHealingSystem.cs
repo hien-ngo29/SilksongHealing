@@ -3,21 +3,18 @@ using UnityEngine;
 using Modding;
 using SFCore.Utils;
 using HutongGames.PlayMaker.Actions;
-using IL.InControl;
-using System.Runtime.CompilerServices;
-using System.IO;
 using GlobalEnums;
-using IL.InControl.NativeDeviceProfiles;
-using System.Timers;
 
 namespace SilksongHealing
 {
     public class FastHealingSystem : MonoBehaviour
     {
         private HeroController hc = HeroController.instance;
+        private AudioSource hcAudioSource;
         PlayMakerFSM spellControl;
 
-        AudioSource healAudioSource;
+        private GameObject scarabGo;
+        private PlayMakerFSM scarabFsm;
 
         private bool isHealing = false;
         private Coroutine healAnimationCoroutine;
@@ -35,12 +32,16 @@ namespace SilksongHealing
         {
             spellControl = hc.spellControl;
 
-            healAudioSource = hc.GetComponent<AudioSource>();
-            healAudioSource.clip = (AudioClip)spellControl.GetAction<AudioPlayerOneShotSingle>("Focus Heal", 3).audioClip.Value;
+            scarabGo = GameObject.Find("Blocker Shield");
+            scarabFsm = scarabGo.LocateMyFSM("Control");
+
+            hcAudioSource = hc.GetComponent<AudioSource>();
+            hcAudioSource.clip = (AudioClip)spellControl.GetAction<AudioPlayerOneShotSingle>("Focus Heal", 3).audioClip.Value;
 
             ModHooks.SoulGainHook += OnSoulGained;
             On.HeroController.CanFocus += CheckIfCharmNotEquippedToAllowFocus;
             On.HeroController.TakeDamage += OnDamageTaken;
+            On.PlayerData.TakeHealth += OnHealthTaken;
         }
 
         private bool CheckIfCharmNotEquippedToAllowFocus(On.HeroController.orig_CanFocus orig, HeroController self)
@@ -62,10 +63,17 @@ namespace SilksongHealing
 
         private void OnDamageTaken(On.HeroController.orig_TakeDamage orig, HeroController self, GameObject go, CollisionSide damageSide, int damageAmount, int hazardType)
         {
-            if (isHealing)
+            if (isHealing && IsCharmEquipped())
             {
                 DeactivateHealingState();
-                hc.TakeMP(hc.playerData.MPCharge);
+
+                if (hc.playerData.equippedCharm_5)
+                {
+                    scarabFsm.SendEvent("BLOCKER HIT");
+                }
+
+                if (!hc.playerData.equippedCharm_5)
+                    hc.TakeMP(hc.playerData.MPCharge);
 
                 StartCoroutine(FlashScreen());
                 takenDamageWhileHealing = true;
@@ -76,9 +84,16 @@ namespace SilksongHealing
             orig(self, go, damageSide, damageAmount, hazardType);
         }
 
+        private void OnHealthTaken(On.PlayerData.orig_TakeHealth orig, PlayerData self, int amount)
+        {   
+            if (IsCharmEquipped() && hc.playerData.equippedCharm_5 && takenDamageWhileHealing && !hc.playerData.killedBlocker)
+                return;
+
+            orig(self, amount);
+        }
+
         private void Update()
         {
-            // && !IsFullHealth() 
             if (IsQuickHealEventActivated() && IsCharmEquipped() && !hc.controlReqlinquished && !isHealing && MasksWillBeHealedCurrenly() != -1)
             {
                 StartCoroutine(StartHealing());
@@ -104,6 +119,9 @@ namespace SilksongHealing
         private IEnumerator StartHealing()
         {
             ActivateHealingState();
+            
+            if (hc.playerData.equippedCharm_5)
+                scarabFsm.SendEvent("FOCUS START");
 
             healAnimationCoroutine = StartCoroutine(StartPlayingAnimation());
             var healingTime = GetHealingDuration();
@@ -128,6 +146,8 @@ namespace SilksongHealing
                 numberOfTimesHealedWithDeepFocus = 0;
             }
 
+            if (hc.playerData.equippedCharm_5)
+                scarabFsm.SendEvent("FOCUS END");
             DeactivateHealingState();
         }
 
@@ -164,7 +184,7 @@ namespace SilksongHealing
             if (numberOfHealMasks == -1)
                 return;
 
-            healAudioSource.Play();
+            hcAudioSource.Play();
 
             hc.AddHealth(numberOfHealMasks);
             if (shouldTakeSoul)
@@ -232,7 +252,6 @@ namespace SilksongHealing
         {
             tk2dSpriteAnimator animator = gameObject.GetComponent<tk2dSpriteAnimator>();
             tk2dSpriteAnimationClip roarClip = animator.GetClipByName("Thorn Attack");
-            Modding.Logger.Log("Length: " + roarClip.frames.Length);
             tk2dSpriteAnimationFrame frame = roarClip.frames[index];
             tk2dSprite sprite = gameObject.GetComponent<tk2dSprite>();
             animator.Stop();
