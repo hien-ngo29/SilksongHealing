@@ -83,15 +83,6 @@ namespace SilksongHealing
             {
                 StartCoroutine(StartHealing());
             }
-
-            if (Input.GetKeyDown(KeyCode.B))
-            {
-                healingAnimationFPS -= 1;
-            }
-            if (Input.GetKeyDown(KeyCode.N))
-            {
-                healingAnimationFPS += 1;
-            }
         }
 
         private bool IsFullHealth()
