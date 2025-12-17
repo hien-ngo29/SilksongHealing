@@ -7,6 +7,8 @@ using IL.InControl;
 using System.Runtime.CompilerServices;
 using System.IO;
 using GlobalEnums;
+using IL.InControl.NativeDeviceProfiles;
+using System.Timers;
 
 namespace SilksongHealing
 {
@@ -21,7 +23,11 @@ namespace SilksongHealing
         private Coroutine healAnimationCoroutine;
         private bool takenDamageWhileHealing = false;
 
-        private float healingDurationBySec = 1.533f;
+        private float healingDurationBySec = 1.37f;
+        private float healingWithDeepFocusDurationBySec = 1.94f / 2; // We heal 1.94 / 2 seconds TWICE
+        private float healingWithQuickFocusDurationBySec = 1.05f;
+        private float healingWithQuickFocusAndDeepFocusDuractionBySec = 1.3f / 2; // We heal 1.3 / 2 seconds TWICE
+        private int numberOfTimesHealedWithDeepFocus = 0;
 
         int healingAnimationFPS = 6;
 
@@ -109,14 +115,27 @@ namespace SilksongHealing
             ActivateHealingState();
 
             healAnimationCoroutine = StartCoroutine(StartPlayingAnimation());
-            yield return new WaitForSeconds(healingDurationBySec);
+            var healingTime = GetHealingDuration();
+            yield return new WaitForSeconds(healingTime);
             if (healAnimationCoroutine != null)
                 StopCoroutine(healAnimationCoroutine);
 
-            if (!takenDamageWhileHealing)
+            if (!takenDamageWhileHealing && numberOfTimesHealedWithDeepFocus >= 2 && hc.playerData.equippedCharm_34)
+                HealThreeMasks(false);
+            else if (!takenDamageWhileHealing)
                 HealThreeMasks();
 
             takenDamageWhileHealing = false;
+
+            if (numberOfTimesHealedWithDeepFocus < 2 && hc.playerData.equippedCharm_34)
+            {
+                StartCoroutine(StartHealing());
+                yield break;
+            }
+            else if (numberOfTimesHealedWithDeepFocus >= 2)
+            {
+                numberOfTimesHealedWithDeepFocus = 0;
+            }
 
             DeactivateHealingState();
         }
@@ -124,6 +143,8 @@ namespace SilksongHealing
         private void ActivateHealingState()
         {
             isHealing = true;
+            if (numberOfTimesHealedWithDeepFocus < 2 && hc.playerData.equippedCharm_34)
+                numberOfTimesHealedWithDeepFocus++;
             HeroAnimationController animController = gameObject.GetComponent<HeroAnimationController>();
             animController.enabled = false;
 
@@ -145,7 +166,7 @@ namespace SilksongHealing
             isHealing = false;
         }
 
-        private void HealThreeMasks()
+        private void HealThreeMasks(bool shouldTakeSoul = true)
         {
             int numberOfHealMasks = MasksWillBeHealedCurrenly();
 
@@ -155,9 +176,28 @@ namespace SilksongHealing
             healAudioSource.Play();
 
             hc.AddHealth(numberOfHealMasks);
-            hc.TakeMP(numberOfHealMasks * 33);
+            if (shouldTakeSoul)
+                hc.TakeMP(numberOfHealMasks * 33);
 
             StartCoroutine(FlashScreen());
+        }
+
+        private float GetHealingDuration()
+        {
+            var healingTime = healingDurationBySec;
+            if (hc.playerData.equippedCharm_7)
+            {
+                healingTime = healingWithQuickFocusDurationBySec;
+            }
+            if (hc.playerData.equippedCharm_34)
+            {
+                healingTime = healingWithDeepFocusDurationBySec;
+            }
+            if (hc.playerData.equippedCharm_7 && hc.playerData.equippedCharm_34)
+            {
+                healingTime = healingWithQuickFocusAndDeepFocusDuractionBySec;
+            }
+            return healingTime;
         }
 
         private IEnumerator FlashScreen()
@@ -177,6 +217,11 @@ namespace SilksongHealing
                 return 2;
             else if (PlayerData.instance.MPCharge >= 99)
                 return 3;
+
+            if (hc.playerData.equippedCharm_34)
+            {
+                return 2;
+            }
 
             return -1;
         }
