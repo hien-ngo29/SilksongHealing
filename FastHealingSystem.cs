@@ -21,15 +21,12 @@ namespace SilksongHealing
         private bool isHealing = false;
         private Coroutine healAnimationCoroutine;
         private Coroutine healCoroutine;
-        private bool takenDamageWhileHealing = false;
 
         private float healingDurationBySec = 1.37f;
         private float healingWithDeepFocusDurationBySec = 1.94f / 2; // We heal 1.94 / 2 seconds TWICE
         private float healingWithQuickFocusDurationBySec = 0.89f;
         private float healingWithQuickFocusAndDeepFocusDuractionBySec = 1.3f / 2; // We heal 1.3 / 2 seconds TWICE
         private int numberOfTimesHealedWithDeepFocus = 0;
-
-        int healingAnimationFPS = 6;
 
         private void Awake()
         {
@@ -67,8 +64,6 @@ namespace SilksongHealing
         {
             if (isHealing && IsCharmEquipped())
             {
-                takenDamageWhileHealing = true;
-
                 if (hc.playerData.equippedCharm_5)
                 {
                     scarabFsm.SendEvent("BLOCKER HIT");
