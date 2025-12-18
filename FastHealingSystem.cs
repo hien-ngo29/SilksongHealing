@@ -4,6 +4,7 @@ using Modding;
 using SFCore.Utils;
 using HutongGames.PlayMaker.Actions;
 using GlobalEnums;
+using Mono.Security.X509.Extensions;
 
 namespace SilksongHealing
 {
@@ -19,6 +20,7 @@ namespace SilksongHealing
 
         private bool isHealing = false;
         private Coroutine healAnimationCoroutine;
+        private Coroutine healCoroutine;
         private bool takenDamageWhileHealing = false;
 
         private float healingDurationBySec = 1.37f;
@@ -42,7 +44,6 @@ namespace SilksongHealing
             ModHooks.SoulGainHook += OnSoulGained;
             On.HeroController.CanFocus += CheckIfCharmNotEquippedToAllowFocus;
             On.HeroController.TakeDamage += OnDamageTaken;
-            On.PlayerData.TakeHealth += OnHealthTaken;
         }
 
         private bool CheckIfCharmNotEquippedToAllowFocus(On.HeroController.orig_CanFocus orig, HeroController self)
@@ -66,31 +67,25 @@ namespace SilksongHealing
         {
             if (isHealing && IsCharmEquipped())
             {
-                DeactivateHealingState();
+                takenDamageWhileHealing = true;
 
                 if (hc.playerData.equippedCharm_5)
                 {
                     scarabFsm.SendEvent("BLOCKER HIT");
+                    hcAudioSource.PlayOneShot(hc.blockerImpact, 1f);   
                 }
+
+                DeactivateHealingState();
 
                 if (!hc.playerData.equippedCharm_5)
                     hc.TakeMP(hc.playerData.MPCharge);
 
-                StartCoroutine(FlashScreen());
-                takenDamageWhileHealing = true;
+                StopCoroutine(healCoroutine);
+                StopCoroutine(healAnimationCoroutine);
 
-                if (healAnimationCoroutine != null)
-                    StopCoroutine(healAnimationCoroutine);
+                numberOfTimesHealedWithDeepFocus = 0;
             }
             orig(self, go, damageSide, damageAmount, hazardType);
-        }
-
-        private void OnHealthTaken(On.PlayerData.orig_TakeHealth orig, PlayerData self, int amount)
-        {   
-            if (IsCharmEquipped() && hc.playerData.equippedCharm_5 && takenDamageWhileHealing && !hc.playerData.killedBlocker)
-                return;
-
-            orig(self, amount);
         }
 
         private bool IsHeroInStableState()
@@ -102,7 +97,7 @@ namespace SilksongHealing
         {
             if (IsQuickHealEventActivated() && IsCharmEquipped() && !hc.controlReqlinquished && IsHeroInStableState() && !isHealing && MasksWillBeHealedCurrenly() != -1)
             {
-                StartCoroutine(StartHealing());
+                healCoroutine = StartCoroutine(StartHealing());
             }
         }
 
@@ -125,9 +120,8 @@ namespace SilksongHealing
         private IEnumerator StartHealing()
         {
             ActivateHealingState();
-            
-            if (hc.playerData.equippedCharm_5)
-                scarabFsm.SendEvent("FOCUS START");
+
+            hc.cState.focusing = true;
 
             healAnimationCoroutine = StartCoroutine(StartPlayingAnimation());
             var healingTime = GetHealingDuration();
@@ -135,25 +129,23 @@ namespace SilksongHealing
             if (healAnimationCoroutine != null)
                 StopCoroutine(healAnimationCoroutine);
 
-            if (!takenDamageWhileHealing && numberOfTimesHealedWithDeepFocus >= 2 && hc.playerData.equippedCharm_34)
+            if (numberOfTimesHealedWithDeepFocus >= 2 && hc.playerData.equippedCharm_34)
                 HealThreeMasks(false);
-            else if (!takenDamageWhileHealing)
+            else
                 HealThreeMasks();
 
-            takenDamageWhileHealing = false;
-
-            if (numberOfTimesHealedWithDeepFocus < 2 && hc.playerData.equippedCharm_34 && !takenDamageWhileHealing && IsHeroInStableState())
+            if (numberOfTimesHealedWithDeepFocus < 2 && hc.playerData.equippedCharm_34 && IsHeroInStableState())
             {
-                StartCoroutine(StartHealing());
+                healCoroutine = StartCoroutine(StartHealing());
                 yield break;
             }
-            else if (numberOfTimesHealedWithDeepFocus >= 2  && !takenDamageWhileHealing)
+            else if (numberOfTimesHealedWithDeepFocus >= 2)
             {
                 numberOfTimesHealedWithDeepFocus = 0;
             }
 
-            if (hc.playerData.equippedCharm_5)
-                scarabFsm.SendEvent("FOCUS END");
+            hc.cState.focusing = false;
+
             DeactivateHealingState();
         }
 
@@ -168,6 +160,9 @@ namespace SilksongHealing
             var knightRigidBody = gameObject.GetComponent<Rigidbody2D>();
             knightRigidBody.isKinematic = true;
 
+            if (hc.playerData.equippedCharm_5)
+                scarabFsm.SendEvent("FOCUS START");
+
             hc.RelinquishControl();
         }
 
@@ -178,6 +173,9 @@ namespace SilksongHealing
 
             var knightRigidBody = gameObject.GetComponent<Rigidbody2D>();
             knightRigidBody.isKinematic = false;
+
+            if (hc.playerData.equippedCharm_5)
+                scarabFsm.SendEvent("FOCUS END");
 
             hc.RegainControl();
             isHealing = false;
@@ -230,14 +228,16 @@ namespace SilksongHealing
 
         private int MasksWillBeHealedCurrenly()
         {
-            if (PlayerData.instance.soulLimited && PlayerData.instance.MPCharge >= 66)
+            Modding.Logger.Log("Heal: " + numberOfTimesHealedWithDeepFocus);
+            if (hc.playerData.equippedCharm_34 && 
+            (numberOfTimesHealedWithDeepFocus >= 2 || hc.playerData.MPCharge >= 99))
                 return 2;
-            else if (PlayerData.instance.MPCharge >= 99)
-                return 3;
-
-            if (hc.playerData.equippedCharm_34)
+            else
             {
-                return 2;
+                if (PlayerData.instance.soulLimited && PlayerData.instance.MPCharge >= 66)
+                    return 2;
+                else if (PlayerData.instance.MPCharge >= 99)
+                    return 3;
             }
 
             return -1;
