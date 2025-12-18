@@ -25,7 +25,7 @@ namespace SilksongHealing
 
         private float healingDurationBySec = 1.37f;
         private float healingWithDeepFocusDurationBySec = 1.94f / 2; // We heal 1.94 / 2 seconds TWICE
-        private float healingWithQuickFocusDurationBySec = 1.05f;
+        private float healingWithQuickFocusDurationBySec = 0.89f;
         private float healingWithQuickFocusAndDeepFocusDuractionBySec = 1.3f / 2; // We heal 1.3 / 2 seconds TWICE
         private int numberOfTimesHealedWithDeepFocus = 0;
 
