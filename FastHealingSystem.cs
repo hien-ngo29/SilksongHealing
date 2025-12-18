@@ -64,6 +64,8 @@ namespace SilksongHealing
         {
             if (isHealing && IsCharmEquipped())
             {
+                FlashScreen();
+
                 if (hc.playerData.equippedCharm_5)
                 {
                     scarabFsm.SendEvent("BLOCKER HIT");
@@ -189,7 +191,7 @@ namespace SilksongHealing
             if (shouldTakeSoul)
                 hc.TakeMP(numberOfHealMasks * 33);
 
-            StartCoroutine(FlashScreen());
+            FlashScreen();
         }
 
         private float GetHealingDuration()
@@ -210,15 +212,11 @@ namespace SilksongHealing
             return healingTime;
         }
 
-        private IEnumerator FlashScreen()
+        private void FlashScreen()
         {
             GameObject flashPrefab = spellControl.GetAction<SpawnObjectFromGlobalPool>("Focus Heal", 6).gameObject.Value;
             GameObject flash = Instantiate(flashPrefab, hc.transform.position, Quaternion.identity);
             flash.SetActive(true);
-
-            yield return new WaitUntil(() => !flash.activeSelf);
-
-            Destroy(flash);
         }
 
         private int MasksWillBeHealedCurrenly()
